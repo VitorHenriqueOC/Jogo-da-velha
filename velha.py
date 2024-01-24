@@ -1,4 +1,5 @@
 import os
+import json
 class Game:
     """
     This is the main class that is responsible for the game itself
@@ -162,24 +163,27 @@ class Game:
     def record_result(self, vencedor):
         uppercased_symbol = vencedor.symbol.upper()
         self.score[uppercased_symbol] += 1
-        file_path = os.path.join(os.getcwd(), 'scoreboard.txt')
+        file_path = os.path.join(os.getcwd(), 'scoreboard.json')
+
         
-        # Read existing content from the file
-        existing_content = []
+        existing_content = {}
         if os.path.exists(file_path):
             with open(file_path, 'r') as file:
-                existing_content = file.readlines()
+                existing_content = json.load(file)
 
-        # Update or add the player's score in the content
-        player_info = f'Player: {uppercased_symbol}, Score: {self.score[uppercased_symbol]}\n'
-        updated_content = [line for line in existing_content if not line.startswith(f'Player: {uppercased_symbol}, ')]
-        updated_content.append(player_info)
+      
+        existing_content[uppercased_symbol] = existing_content.get(uppercased_symbol, 0) + 1
 
-        # Write the updated content back to the file
+        
         with open(file_path, 'w') as file:
-            file.writelines(updated_content)
+            json.dump(existing_content, file)
 
         print("Current working directory:", os.getcwd())
+
+        arq = json.dumps('scoreboard.json')
+
+        with open('placar.txt','w') as p:
+            p.write(arq)     
 
 
     def game_over(self, jogador_symbol):
@@ -196,6 +200,7 @@ class Game:
         print(f'Acabou! Jogador com símbolo {jogador_symbol} ganhou!')
         self.record_result(self.jogador[self.turno])
  
+
 
 
 class InvalidMoveError(Exception):
@@ -261,39 +266,127 @@ class Pessoaj:
         self.symbol = symbol
 
 
+class Novo_Jogo(Game):
+    def __init__(self, tabuleiro, p1, p2) -> None:
+        super().__init__(tabuleiro, p1, p2)
+
+    def get_opponent_symbol(self, jogador_atual):
+        """
+        Retorna o símbolo do oponente com base no jogador atual.
+        """
+        return self.jogador[1 - self.jogador.index(jogador_atual)].symbol
+
+    def player_round(self, jogador_atual):
+        """
+        Sobrescreve o método para indicar o símbolo do adversário.
+        """
+        oponente_symbol = self.get_opponent_symbol(jogador_atual)
+        print(f"Sua vez: {jogador_atual.symbol} (seu adversário está usando '{oponente_symbol}')")
+
+    def validate_move(self, move):
+        """
+        Modifica o método para permitir que um jogador faça movimentos no lugar do adversário.
+        """
+        if not (0 <= move < len(self.tabuleiro.tiles) and self.tabuleiro.tiles[move] == " "):
+            raise InvalidMoveError('Movimento inválido. Tente novamente.')
+
+    def record_result(self, vencedor):
+        uppercased_symbol = vencedor.symbol.upper()
+        self.score[uppercased_symbol] += 1
+        file_path = os.path.join(os.getcwd(), 'scoreboard.json')
+
+        
+        existing_content = {}
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as file:
+                existing_content = json.load(file)
+
+      
+        existing_content[uppercased_symbol] = existing_content.get(uppercased_symbol, 0) + 1
+
+        
+        with open(file_path, 'w') as file:
+            json.dump(existing_content, file)
+
+        print("Current working directory:", os.getcwd())
+
+        arq = json.loads('scoreboard.json')
+
+        with open('placar.txt','w') as p:
+            p.write(arq)     
+    
+
 def main():
     while True:
-        try:
-            simbolo1 = input('Digite o valor do símbolo do primeiro jogador: ')
-            if len(simbolo1) != 1:
-                print('O símbolo do jogador deve ser único.')
-                continue  # Go back to the beginning of the loop
+        modo_de_jogo = input("Digite o modo de jogo que você quer jogar, o clássico ou novo: ")
+        
+        if modo_de_jogo == 'clássico':
+            try:
+                simbolo1 = input('Digite o valor do símbolo do primeiro jogador: ')
+                if len(simbolo1) != 1:
+                    print('O símbolo do jogador deve ser único.')
+                    continue  # Go back to the beginning of the loop
 
-            p1 = Pessoaj(simbolo1)
+                p1 = Pessoaj(simbolo1)
 
-            simbolo2 = input('Digite o valor do símbolo do segundo jogador: ')
-            if len(simbolo2) != 1:
-                print('O símbolo do jogador deve ser único.')
-                continue  # Go back to the beginning of the loop
+                simbolo2 = input('Digite o valor do símbolo do segundo jogador: ')
+                if len(simbolo2) != 1:
+                    print('O símbolo do jogador deve ser único.')
+                    continue  # Go back to the beginning of the loop
 
-            p2 = Pessoaj(simbolo2)
+                p2 = Pessoaj(simbolo2)
 
-            tamanho_do_tabuleiro = int(input('Digite o tamanho do tabuleiro (mínimo 3): '))
-            if tamanho_do_tabuleiro < 3:
-                print('O tamanho do tabuleiro deve ser no mínimo 3.')
-                continue  # Go back to the beginning
+                tamanho_do_tabuleiro = int(input('Digite o tamanho do tabuleiro (mínimo 3): '))
+                if tamanho_do_tabuleiro < 3:
+                    print('O tamanho do tabuleiro deve ser no mínimo 3.')
+                    continue  # Go back to the beginning
 
-            meu_tab = Tabuleiro(tamanho_do_tabuleiro)
-            meu_jogo = Game(meu_tab, p1, p2)
-            meu_jogo.jogar()
-            saida = input("Digite sair se quiser fechar o jogo: ") 
-            if saida == 'sair':
-                break  # Get out of the loop
+                meu_tab = Tabuleiro(tamanho_do_tabuleiro)
+                meu_jogo = Game(meu_tab, p1, p2)
+                meu_jogo.jogar()
+                saida = input("Digite sair se quiser fechar o jogo: ") 
+                if saida == 'sair':
+                    break  # Get out of the loop
 
-        except ValueError as ve:
-            print(f'Ocorreu um erro: {ve}')
-        except Exception as e:
-            print(f'Ocorreu um erro: {e}')
+            except ValueError as ve:
+                print(f'Ocorreu um erro: {ve}')
+            except Exception as e:
+                print(f'Ocorreu um erro: {e}')
+        
+        elif modo_de_jogo == 'novo':
+            try:
+                simbolo1 = input("Digite o símbolo que vai ser utilizado pelo seu adversário primeiro jogador: ")
+                if len(simbolo1) != 1:
+                    print('O símbolo do jogador deve ser único.')
+                    continue
+
+                p2 = Pessoaj(simbolo1)
+
+                simbolo2 = input('Digite o símbolo que será utilizado pelo seu adversário, segundo jogador: ')
+                if len(simbolo2) != 1:
+                    print('O símbolo do jogador deve ser único.')
+                    continue
+
+                p1 = Pessoaj(simbolo2)
+
+                tamanho_do_tabuleiro = int(input('Digite o tamanho do tabuleiro (mínimo 3): '))
+                if tamanho_do_tabuleiro < 3:
+                    print('O tamanho do tabuleiro deve ser no mínimo 3.')
+                    continue
+
+                meu_tab = Tabuleiro(tamanho_do_tabuleiro)
+                meu_jogo = Novo_Jogo(meu_tab, p1, p2) 
+                meu_jogo.jogar()
+                saida = input("Digite sair se quiser fechar o jogo: ")
+                if saida == 'sair':
+                    break
+
+            except ValueError as ve:
+                print(f'Ocorreu um erro: {ve}')
+            except Exception as e:
+                print(f'Ocorreu um erro: {e}')
+        else:
+            print('Modo de jogo inválido')
 
 
 if __name__ == '__main__':
