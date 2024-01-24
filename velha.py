@@ -387,7 +387,7 @@ def main():
                 print(f'Ocorreu um erro: {e}')
         else:
             print('Modo de jogo inválido')
-
+        
 
 if __name__ == '__main__':
     main()
